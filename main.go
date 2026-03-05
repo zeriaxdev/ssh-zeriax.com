@@ -133,7 +133,8 @@ Hi I'm %s,
 A self taught developer specialized in many software domains
 including Crypto, Gen AI, Mobile Apps, Web and Backend
 
-I'm currently working at BitGo as a Backend Engineer.
+I'm currently a Backend Engineer at an institutional crypto
+infrastructure company.
 
 I'm fluent in Typescript, Javascript, Kotlin, Python, Go
 or any language that Claude Code knows :)
