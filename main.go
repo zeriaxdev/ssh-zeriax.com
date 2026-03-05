@@ -90,14 +90,8 @@ func teaHandler(s ssh.Session) (tea.Model, []tea.ProgramOption) {
 
 const (
 	dotChar = " • "
-
-	RESUME_URL   = "https://drive.google.com/file/d/1azKao3idMCDqJdCHtCTlvc4U3ABYTtJ7/view?usp=sharing"
-	GITHUB_URL   = "https://github.com/KaustubhPatange"
-	LINKEDIN_URL = "https://www.linkedin.com/in/kaustubhpatange/"
-	TWITTER_URL  = "https://twitter.com/KP206"
 )
 
-// Just a generic tea.Model to demo terminal information of ssh.
 type model struct {
 	Width          int
 	Height         int
@@ -117,8 +111,6 @@ func (m model) Init() tea.Cmd {
 	return nil
 }
 
-type openNextRuntime struct{}
-
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -128,30 +120,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q", "ctrl+c":
 			return m, tea.Quit
-		case "j", "down":
-			m.Choice++
-			if m.Choice > 3 {
-				m.Choice = 3
-			}
-		case "k", "up":
-			m.Choice--
-			if m.Choice < 0 {
-				m.Choice = 0
-			}
-		case "enter":
-			m.runtime = "linux"
-			return openByChoice(m)
-		}
-	case openNextRuntime:
-		switch m.runtime {
-		case "linux":
-			m.runtime = "darwin"
-			return openByChoice(m)
-		case "darwin":
-			m.runtime = "windows"
-			return openByChoice(m)
-		default:
-			m.runtime = ""
 		}
 	}
 	return m, nil
@@ -163,12 +131,12 @@ func (m model) View() string {
 Hi I'm %s,
 
 A self taught developer specialized in many software domains
-including Mobile Apps, Web, Backend, Gen AI.
+including Crypto, Gen AI, Mobile Apps, Web and Backend
 
-I'm currently working at an AI startup as a FullStack 
-Engineer.
+I'm currently working at BitGo as a Backend Engineer.
 
-I'm fluent in Python, Go, Typescript, Javascript, Kotlin.
+I'm fluent in Typescript, Javascript, Kotlin, Python, Go
+or any language that Claude Code knows :)
 `), m.aboutNameStyle.Render("Kaustubh Patange")))
 
 	tpl := m.subtleStyle.Render("Hint: q, ctrl+c: quit")
@@ -183,50 +151,4 @@ I'm fluent in Python, Go, Typescript, Javascript, Kotlin.
 
 	s := fmt.Sprintf("%s\n\n%s\n\n%s", about, choices, tpl)
 	return m.mainStyle.Render("\n" + s + "\n\n")
-}
-
-func checkbox(checkboxStyle lipgloss.Style, label string, checked bool) string {
-	if checked {
-		return checkboxStyle.Render("[x] " + label)
-	}
-	return fmt.Sprintf("[ ] %s", label)
-}
-
-func openByChoice(m model) (tea.Model, tea.Cmd) {
-	switch m.Choice {
-	case 0:
-		return m, openURL(m, RESUME_URL)
-	case 1:
-		return m, openURL(m, GITHUB_URL)
-	case 2:
-		return m, openURL(m, LINKEDIN_URL)
-	case 3:
-		return m, openURL(m, TWITTER_URL)
-	}
-	return m, nil
-}
-
-func openURL(m model, url string) tea.Cmd {
-	var cmd string
-	var args []string
-
-	runtime := m.runtime
-
-	switch runtime {
-	case "linux":
-		cmd = "xdg-open"
-	case "darwin":
-		cmd = "open"
-	default:
-		cmd = "cmd"
-		args = []string{"/c", "start"}
-	}
-	args = append(args, url)
-	c := wish.Command(m.sess, cmd, args...)
-
-	cmdExec := tea.Exec(c, func(_ error) tea.Msg {
-
-		return openNextRuntime{}
-	})
-	return cmdExec
 }
