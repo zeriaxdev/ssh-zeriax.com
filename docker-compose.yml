@@ -3,7 +3,7 @@ services:
     build: .
     restart: unless-stopped
     ports:
-      - "22:22"
+      - "2222:22"
     volumes:
-      # Mount the SSH host key — never bake keys into the image
+      # Host key is written by preStartCmd from SSH_HOST_KEY env var
       - ./.ssh:/app/.ssh:ro
