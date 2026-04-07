@@ -1,6 +1,6 @@
 services:
   sshport:
-    build: .
+    image: ghcr.io/zeriaxdev/ssh-zeriax.com:latest
     restart: unless-stopped
     ports:
       - "2222:22"
