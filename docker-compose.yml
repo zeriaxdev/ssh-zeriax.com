@@ -1,0 +1,9 @@
+services:
+  sshport:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "22:22"
+    volumes:
+      # Mount the SSH host key — never bake keys into the image
+      - ./.ssh:/app/.ssh:ro

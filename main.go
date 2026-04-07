@@ -107,11 +107,13 @@ func (m model) View() string {
 	muted := lipgloss.Color("242")  // medium gray
 	dim := lipgloss.Color("238")    // dark gray
 	label := lipgloss.Color("246")  // light gray
+	link := lipgloss.Color("255")   // idfk
 
 	nameStyle := m.r.NewStyle().Bold(true).Foreground(accent)
 	bodyStyle := m.r.NewStyle().Foreground(label)
 	labelStyle := m.r.NewStyle().Foreground(muted)
 	hintStyle := m.r.NewStyle().Foreground(dim)
+	linkStyle := m.r.NewStyle().Foreground(link)
 	pad := m.r.NewStyle().MarginLeft(4)
 
 	elapsed := time.Since(m.connectedAt).Round(time.Second)
@@ -125,17 +127,17 @@ func (m model) View() string {
 		nameStyle.Render("zeriax"),
 		"",
 		bodyStyle.Render("student, developer, designer"),
-		bodyStyle.Render("currently at Omnia studying electricity and automation"),
-		bodyStyle.Render("discord bot and Next.js experience, working on a side project"),
+		bodyStyle.Render("studying electricity and automation at Omnia"),
+		bodyStyle.Render("discord bot and react experience"),
 		"",
 		row(labelStyle, bodyStyle, "languages ", "typescript  go  python  rust (wip)"),
-		row(labelStyle, bodyStyle, "os        ", "macos"),
-		row(labelStyle, bodyStyle, "interests ", "open source, UI/UX, MCP"),
+		row(labelStyle, bodyStyle, "os        ", "macos, arch linux, windows"),
+		row(labelStyle, bodyStyle, "interests ", "frontend, APIs, self-hosting, UI/UX, MCP"),
 		"",
-		row(labelStyle, bodyStyle, "github    ", "https://github.com/zeriaxdev"),
-		row(labelStyle, bodyStyle, "linkedin  ", "https://linkedin.com/in/egor-gaynutdinov"),
-		row(labelStyle, bodyStyle, "twitter   ", "https://x.com/zeriaxdev"),
-		row(labelStyle, bodyStyle, "email     ", "mailto:contact@zeriax.com"),
+		row(labelStyle, linkStyle, "github    ", "https://github.com/zeriaxdev"),
+		row(labelStyle, linkStyle, "linkedin  ", "https://linkedin.com/in/egor-gaynutdinov"),
+		row(labelStyle, linkStyle, "twitter   ", "https://x.com/zeriaxdev"),
+		row(labelStyle, linkStyle, "email     ", "mailto:contact@zeriax.com"),
 		row(labelStyle, bodyStyle, "matrix    ", "@egorrg:matrix.org"),
 		"",
 		"",
