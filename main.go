@@ -7,7 +7,6 @@ import (
 	"net"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
@@ -32,7 +31,7 @@ func main() {
 		wish.WithHostKeyPath(".ssh/id_ed25519-1"),
 		wish.WithMiddleware(
 			bubbletea.Middleware(teaHandler),
-			activeterm.Middleware(), // Bubble Tea apps usually require a PTY.
+			activeterm.Middleware(),
 			logging.Middleware(),
 		),
 	)
@@ -60,55 +59,29 @@ func main() {
 }
 
 func teaHandler(s ssh.Session) (tea.Model, []tea.ProgramOption) {
-	// This should never fail, as we are using the activeterm middleware.
 	pty, _, _ := s.Pty()
-
-	renderer := bubbletea.MakeRenderer(s)
-	mainStyle := renderer.NewStyle().MarginLeft(2)
-	checkboxStyle := renderer.NewStyle().Bold(false).Foreground(lipgloss.Color("213"))
-	aboutStyle := renderer.NewStyle().Bold(true).Foreground(lipgloss.Color("246"))
-	aboutNameStyle := renderer.NewStyle().Bold(true).Foreground(lipgloss.Color("15"))
-	subtleStyle := renderer.NewStyle().Foreground(lipgloss.Color("241"))
-	dotStyle := renderer.NewStyle().Foreground(lipgloss.Color("236")).Render(dotChar)
-
 	m := model{
-		Width:          pty.Window.Width,
-		Height:         pty.Window.Height,
-		Choice:         0,
-		Chosen:         false,
-		mainStyle:      mainStyle,
-		aboutStyle:     aboutStyle,
-		aboutNameStyle: aboutNameStyle,
-		checkboxStyle:  checkboxStyle,
-		subtleStyle:    subtleStyle,
-		dotStyle:       dotStyle,
-		sess:           s,
-		runtime:        "",
+		Width:       pty.Window.Width,
+		Height:      pty.Window.Height,
+		connectedAt: time.Now(),
+		r:           bubbletea.MakeRenderer(s),
 	}
 	return m, []tea.ProgramOption{tea.WithAltScreen()}
 }
 
-const (
-	dotChar = " • "
-)
+type tickMsg time.Time
 
 type model struct {
-	Width          int
-	Height         int
-	Choice         int
-	Chosen         bool
-	mainStyle      lipgloss.Style
-	aboutStyle     lipgloss.Style
-	aboutNameStyle lipgloss.Style
-	checkboxStyle  lipgloss.Style
-	subtleStyle    lipgloss.Style
-	dotStyle       string
-	sess           ssh.Session
-	runtime        string
+	Width       int
+	Height      int
+	connectedAt time.Time
+	r           *lipgloss.Renderer
 }
 
 func (m model) Init() tea.Cmd {
-	return nil
+	return tea.Tick(time.Second, func(t time.Time) tea.Msg {
+		return tickMsg(t)
+	})
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -116,6 +89,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.Width = msg.Width
 		m.Height = msg.Height
+	case tickMsg:
+		return m, tea.Tick(time.Second, func(t time.Time) tea.Msg {
+			return tickMsg(t)
+		})
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "ctrl+c":
@@ -126,30 +103,53 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
+	accent := lipgloss.Color("150") // soft sage green
+	muted := lipgloss.Color("242")  // medium gray
+	dim := lipgloss.Color("238")    // dark gray
+	label := lipgloss.Color("246")  // light gray
 
-	about := m.aboutStyle.Render(fmt.Sprintf(strings.TrimSpace(`
-Hi I'm %s,
+	nameStyle := m.r.NewStyle().Bold(true).Foreground(accent)
+	bodyStyle := m.r.NewStyle().Foreground(label)
+	labelStyle := m.r.NewStyle().Foreground(muted)
+	hintStyle := m.r.NewStyle().Foreground(dim)
+	pad := m.r.NewStyle().MarginLeft(4)
 
-A self taught developer specialized in many software domains
-including Crypto, Gen AI, Mobile Apps, Web and Backend
+	elapsed := time.Since(m.connectedAt).Round(time.Second)
+	h := int(elapsed.Hours())
+	min := int(elapsed.Minutes()) % 60
+	sec := int(elapsed.Seconds()) % 60
+	uptime := fmt.Sprintf("%d:%02d:%02d", h, min, sec)
 
-I'm currently a Backend Engineer at an institutional crypto
-infrastructure company.
+	lines := []string{
+		"",
+		nameStyle.Render("zeriax"),
+		"",
+		bodyStyle.Render("student, developer, designer"),
+		bodyStyle.Render("currently at Omnia studying electricity and automation"),
+		bodyStyle.Render("discord bot and Next.js experience, working on a side project"),
+		"",
+		row(labelStyle, bodyStyle, "languages ", "typescript  go  python  rust (wip)"),
+		row(labelStyle, bodyStyle, "os        ", "macos"),
+		row(labelStyle, bodyStyle, "interests ", "open source, UI/UX, MCP"),
+		"",
+		row(labelStyle, bodyStyle, "github    ", "https://github.com/zeriaxdev"),
+		row(labelStyle, bodyStyle, "linkedin  ", "https://linkedin.com/in/egor-gaynutdinov"),
+		row(labelStyle, bodyStyle, "twitter   ", "https://x.com/zeriaxdev"),
+		row(labelStyle, bodyStyle, "email     ", "mailto:contact@zeriax.com"),
+		row(labelStyle, bodyStyle, "matrix    ", "@egorrg:matrix.org"),
+		"",
+		"",
+		hintStyle.Render(fmt.Sprintf("session %s    q/ctrl+c to quit", uptime)),
+		"",
+	}
 
-I'm fluent in Typescript, Javascript, Kotlin, Python, Go
-or any language that Claude Code knows :)
-`), m.aboutNameStyle.Render("Kaustubh Patange")))
+	out := ""
+	for _, l := range lines {
+		out += pad.Render(l) + "\n"
+	}
+	return out
+}
 
-	tpl := m.subtleStyle.Render("Hint: q, ctrl+c: quit")
-
-	choices := fmt.Sprintf(
-		"%s\n%s\n%s\n%s",
-		m.subtleStyle.Copy().Foreground(lipgloss.Color("222")).Render("Resume / CV    https://kaustubhpatange.com/resume"),
-		m.subtleStyle.Copy().Foreground(lipgloss.Color("13")).Render("GitHub         https://github.com/KaustubhPatange"),
-		m.subtleStyle.Copy().Foreground(lipgloss.Color("33")).Render("Linkedin       https://linkedin.com/in/kaustubhpatange"),
-		m.subtleStyle.Copy().Foreground(lipgloss.Color("39")).Render("Twitter        https://twitter.com/KP206"),
-	)
-
-	s := fmt.Sprintf("%s\n\n%s\n\n%s", about, choices, tpl)
-	return m.mainStyle.Render("\n" + s + "\n\n")
+func row(labelStyle, bodyStyle lipgloss.Style, key, val string) string {
+	return labelStyle.Render(key) + "  " + bodyStyle.Render(val)
 }
