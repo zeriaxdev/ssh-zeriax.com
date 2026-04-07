@@ -5,5 +5,7 @@ services:
     ports:
       - "2222:22"
     volumes:
-      # Host key is written by preStartCmd from SSH_HOST_KEY env var
-      - ./.ssh:/app/.ssh:ro
+      - ssh-keys:/app/.ssh
+
+volumes:
+  ssh-keys:
